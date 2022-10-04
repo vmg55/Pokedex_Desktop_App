@@ -1,27 +1,43 @@
+import random
+
+
 class Pokemon:
 
+    LEVEL = 50
+
+    def calculate_in_game_hp(self, base_stat):
+        in_game_hp = ((2 * base_stat) * self.LEVEL) / 100 + self.LEVEL + 10
+        return in_game_hp
+
+    def calculate_in_game_stat(self, base_stat):
+        in_game_stat = ((2 * base_stat) * self.LEVEL) / 100 + 5
+        return in_game_stat
+
     # Pokemon Constuctor
-    def __init__(self, name='', type1=None, type2=None, hp=0, attack=0, defense=0,
-                 sp_attack=0, sp_defense=0, speed=0, move_set={}):
+    def __init__(self, name='', type1=None, type2=None, base_hp=0, base_attack=0, base_defense=0,
+                 base_sp_attack=0, base_sp_defense=0, base_speed=0, move_set={}):
         # Pokemon Info
         self.name = name
         self.type1 = type1
         self.type2 = type2
-        # Basic Stats
-        self.hp = hp
-        self.attack = attack
-        self.defense = defense
-        self.sp_attack = sp_attack
-        self.sp_defense = sp_defense
-        self.speed = speed
+        # In Game Stats
+        self.hp = self.calculate_in_game_hp(base_hp)
+        self.attack = self.calculate_in_game_stat(base_attack)
+        self.defense = self.calculate_in_game_stat(base_defense)
+        self.sp_attack = self.calculate_in_game_stat(base_sp_attack)
+        self.sp_defense = self.calculate_in_game_stat(base_sp_defense)
+        self.speed = self.calculate_in_game_stat(base_speed)
         # Pokemon Moves
         # Key = move name
-        # Value = list [power, accuracy, type]
+        # Value = list [power, accuracy, type, category]
         self.move_set = move_set
+        # Status Effects
+        self.status = None
 
     def set_moves(self):
+        # Only input 1 move for testing purposes
         empty_moves = 4 - len(self.move_set)
-        for i in range(empty_moves):
+        for i in range(1):
             move = input('Move Name: ')
             power = int(input('Power: '))
             accuracy = int(input('Accuracy: '))
@@ -36,13 +52,77 @@ class Pokemon:
     # Pokemon uses an attack
     # Need stats of opposing pokemon to calculate damage taken
     def attack_move(self, opposing_pokemon):
+        print(f'What will {self.name} do?')
         self.display_moves()
-        chosen_move = input(f'What will {self.name} do?')
+        chosen_move = input()
         # Validate user input
         while chosen_move not in self.move_set:
             print('Invalid move')
-            chosen_move = input(f'What will {self.name} do?')
+            print(f'What will {self.name} do?')
+            self.display_moves()
+            chosen_move = input()
+
+        # Initialize default values for damage calculator
+        critical = 1
+        random_int = random.randint(85, 100) / 100
+        stab = 1
+        burn = 1
+        type_effectiveness = 1
+        TYPE1 = opposing_pokemon.type1
+        TYPE2 = opposing_pokemon.type2
+        power = self.move_set[chosen_move][0]
+        accuracy = self.move_set[chosen_move][1]
+        type_of_move = self.move_set[chosen_move][2]
+        category = self.move_set[chosen_move][3]
+        a = 1
+        d = 1
+
+        # Calculate type effectiveness
+        if type_of_move in type_chart[TYPE1]['Weak Against']:
+            type_effectiveness *= 2
+        if self.type2 is not None:
+            if type_of_move in type_chart[TYPE2]['Weak Against']:
+                type_effectiveness *= 2
+
+        # Check if critical hit
+        ch_rand = random.randint(1, 16)
+        if ch_rand == 16:
+            critical = 2
+
+        # Check if stab
+        if type_of_move == TYPE1 or type_of_move == TYPE2:
+            stab = 1.5
+
+        # Check if Pokemon is burned
+        if self.status == 'Burn' and category == 'Physical':
+            burn = 0.5
+
+        # Determine what Attack and Defense Stats will be used
+        if category == 'Physical':
+            a = self.attack
+            d = opposing_pokemon.defense
+        if category == 'Special':
+            a = self.sp_attack
+            d = opposing_pokemon.sp_defense
+
+        # Calculate damage dealt
+        damage = ((((2 * self.LEVEL) / 5 + 2) * power * a / d) / 50 + 2) * critical * random_int * burn * \
+            stab * type_effectiveness
+
+        # Display turn
         print(f'{self.name} used {chosen_move}!')
+
+        # Calculate if the move lands
+        threshold = random.randint(1,100)
+        if threshold >= 1 and threshold <= accuracy:
+            if critical == 2:
+                print('It was a critical hit!')
+            if type_effectiveness >= 2:
+                print('It was super-effective!!')
+            # Subtract damage from opposing pokemon
+            opposing_pokemon.hp -= damage
+        else:
+            print(f"{self.name}'s attack missed!")
 
 
 type_chart = {
@@ -87,7 +167,7 @@ type_chart = {
 
 
 def one_on_one_battle(pokemon1, pokemon2):
-    while pokemon1.hp != 0 and pokemon2.hp != 0:
+    while pokemon1.hp > 0 and pokemon2.hp > 0:
         # Determine which pokemon goes first
         # Faster pokemon moves first
         if pokemon1.speed > pokemon2.speed:
