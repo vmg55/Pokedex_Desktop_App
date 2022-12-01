@@ -15,12 +15,15 @@ class Pokemon:
         return in_game_stat
 
     # Pokemon Constuctor
-    def __init__(self, name='', type1=None, type2=None, base_hp= (0), base_attack=0, base_defense=0,
-                 base_sp_attack=0, base_sp_defense=0, base_speed=0, move_set=None):
-        # Pokemon Info
+    def __init__(self, name='', pokedex_id = 0 ,  type1=None, type2=None, base_hp=0, base_attack=0, base_defense=0,
+                 base_sp_attack=0, base_sp_defense=0, base_speed=0, move_set=None, gen=0, sprite=None):
+        # Pokemon Meta Data
         self.name = name
+        self.pokedex_id = pokedex_id
         self.type1 = type1
         self.type2 = type2
+        self.gen = gen
+        self.sprite = sprite
         # In Game Stats
         self.hp = self.calculate_in_game_hp(base_hp)
         self.attack = self.calculate_in_game_stat(base_attack)
@@ -30,8 +33,6 @@ class Pokemon:
         self.speed = self.calculate_in_game_stat(base_speed)
         # Pokemon Moves
         self.move_set = move_set
-        # Status Effects
-        self.status = None
 
     def input_move(self):
         name = input('Move Name: ')
@@ -51,6 +52,15 @@ class Pokemon:
     def display_moves(self):
         for move in self.move_set:
             print(move.name)
+
+    def display_stats(self):
+        print('Pokemon:', self.name, self.type1, self.type2, f'(Generation {self.gen})')
+        print('HP:', self.hp)
+        print('Attack:', self.attack)
+        print('Defense:',  self.defense)
+        print('Special Attack:', self.sp_attack)
+        print('Special Defense:', self.sp_defense)
+        print('Speed:', self.speed)
 
     # Pokemon uses an attack
     # Need stats of opposing pokemon to calculate damage taken
@@ -123,8 +133,8 @@ class Pokemon:
             d = opposing_pokemon.sp_defense
 
         # Calculate damage dealt
-        damage = int(((((2 * self.LEVEL) / 5 + 2) * power * a / d) / 50 + 2) * critical * random_int * burn * \
-            stab * type_effectiveness)
+        damage = int(((((2 * self.LEVEL) / 5 + 2) * power * a / d) / 50 + 2) * critical * random_int * burn *
+                     stab * type_effectiveness)
 
         # Display turn
         print(f'{self.name} used {chosen_move.name}!')
@@ -140,6 +150,8 @@ class Pokemon:
                 print("It's not very effective...")
             # Subtract damage from opposing pokemon
             opposing_pokemon.hp -= damage
+            if opposing_pokemon.hp < 0:
+                opposing_pokemon.hp = 0
         else:
             print(f"{self.name}'s attack missed!")
 
@@ -149,7 +161,7 @@ type_chart = {
              'Strong Against': ['Grass', 'Ice', 'Bug', 'Steel']},
     'Water': {'Weak Against': ['Electric', 'Grass'],
               'Strong Against': ['Fire', 'Ground', 'Rock']},
-    'Grass': {'Weak Against': ['Fire', 'Ice', 'Flying','Poison', 'Bug'],
+    'Grass': {'Weak Against': ['Fire', 'Ice', 'Flying', 'Poison', 'Bug'],
               'Strong Against': ['Water', 'Ground', 'Rock']},
     'Rock': {'Weak Against': ['Water', 'Steel', 'Fighting', 'Ground', 'Grass'],
              'Strong Against': ['Fire', 'Flying', 'Ice', 'Steel']},
@@ -186,9 +198,9 @@ type_chart = {
 
 
 def one_on_one_battle(pokemon1, pokemon2):
-    print(f'Opponent sends out {pokemon2.name}!')
-    print(f'Go {pokemon1.name}!')
+    counter = 1
     while pokemon1.hp > 0 and pokemon2.hp > 0:
+        print(f'*** turn {counter} ***')
         print(pokemon1.name, pokemon1.hp, pokemon2.name, pokemon2.hp, end=' ')
         print()
         # Determine which pokemon goes first
@@ -207,13 +219,67 @@ def one_on_one_battle(pokemon1, pokemon2):
             # Check if pokemon has not fainted
             if pokemon1.hp > 0:
                 pokemon1.attack_move(pokemon2)
+        counter += 1
+        print('\n')
 
     if pokemon1.hp <= 0:
         print(f'{pokemon1.name} fainted!')
+        return pokemon2
     else:
         print(f'{pokemon2.name} fainted!')
+        return pokemon1
 
 
-def team_battle(team1=[], team2=[]):
-    pass
+def display_team(team):
+    for i in team:
+        print(i.name)
 
+
+def team_battle(team1=None, team2=None):
+    # one team of pokemon will battle against another team of pokemon
+    # need to battle pokemon one on one
+    # after each battle 1 pokemon will faint
+    # a fainted pokemon cannot be revived so remove the pokemon from the team
+    # when a pokemon is removed from battle a new pokemon comes in to replace it
+    # the pokemon that did not faint must stay in battle and their health and stats must stay the same
+    # the battle ends when one team runs out of pokemon
+
+    index1 = 0
+    index2 = 0
+
+    while team1 and team2:
+        # choose what pokemon are battling
+        team1_pokemon = team1[index1]
+        team2_pokemon = team2[index2]
+
+        # battle the two pokemon
+        winner = one_on_one_battle(team1_pokemon, team2_pokemon)
+
+        # Remove fainted pokemon
+        # Ask user what pokemon should be subbed in
+        if team2_pokemon.name == winner.name:
+            team1.remove(team1[index1])
+            if team1:
+                print('What pokemon should be sent in?')
+                display_team(team1)
+                sub = input()
+                for i, poke in enumerate(team1):
+                    if poke.name.lower() == sub.lower():
+                        index1 = i
+                        print(f'Go {team1[index1].name}')
+
+        if team1_pokemon.name == winner.name:
+            team2.remove(team2[index2])
+            if team2:
+                print('What pokemon should be sent in?')
+                display_team(team2)
+                sub = input()
+                for j, poke in enumerate(team2):
+                    if poke.name.lower() == sub.lower():
+                        index2 = j
+                        print(f'Go {team1[index2].name}')
+
+    if team1:
+        print('Team 1 wins!!!')
+    else:
+        print('Team 2 wins!!!')
