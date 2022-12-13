@@ -21,7 +21,7 @@ class Pokedex:
         self.header_frame = ttk.Frame(master)
         self.header_frame.pack()
         # Logo and Header Text
-        self.logo = PhotoImage(file = 'crystal_sprites/202.gif')
+        self.logo = PhotoImage(file = 'pokemon_sprites/202.png')
         ttk.Label(self.header_frame, image = self.logo).grid(row=0, column=1)
         self.title = ttk.Label(self.header_frame, text='Poke App')
         self.title.grid(row=0, column=0, rowspan=2)
