@@ -38,13 +38,13 @@ class Pokedex:
         self.picture_frame.pack()
         self.pokemon_type1 = 'Grass'
         self.pokemon_type2 = 'Poison'
-        self.pokemon_sprite = PhotoImage(file='crystal_sprites/1.gif')
+        self.pokemon_sprite = PhotoImage(file='pokemon_sprites/1.png')
         self.sprite_label = ttk.Label(self.picture_frame, image=self.pokemon_sprite)
         self.type1_label = ttk.Label(self.picture_frame, text=self.pokemon_type1)
         self.type2_label = ttk.Label(self.picture_frame, text=self.pokemon_type2)
         self.type1_label.grid(row=0, column=0)
         self.type2_label.grid(row=0, column=1)
-        self.sprite_label.grid(row=1, column = 0, columnspan=2)
+        self.sprite_label.grid(row=1, column=0, columnspan=2)
 
         # Frame for Pokemon stats
         self.stats_frame = ttk.Frame(master)
@@ -57,7 +57,7 @@ class Pokedex:
         self.sp_defense_label = ttk.Label(self.stats_frame, text=f"Sp Def \t {pokedex_dict['Bulbasaur'].sp_defense}")
         self.speed_label = ttk.Label(self.stats_frame, text=f"Speed \t {pokedex_dict['Bulbasaur'].speed}")
         # Label Configurations
-        self.hp_label.grid(row=0, column = 0)
+        self.hp_label.grid(row=0, column=0)
         self.attack_label.grid(row=1, column=0)
         self.defense_label.grid(row=2, column=0)
         self.sp_attack_label.grid(row=3, column=0)
@@ -91,7 +91,7 @@ class Pokedex:
     def get_pokemon(self, event):
         pokemon_selected = self.combobox.get()
         pokedex_id = pokedex_dict[pokemon_selected].pokedex_id
-        poke_sprite = PhotoImage(file=f'crystal_sprites/{pokedex_id}.gif')
+        poke_sprite = PhotoImage(file=f'pokemon_sprites/{pokedex_id}.png')
         self.type1_label.config(text=pokedex_dict[pokemon_selected].type1)
         self.type2_label.config(text=pokedex_dict[pokemon_selected].type2)
         self.sprite_label.img = poke_sprite
@@ -119,6 +119,9 @@ for index, record in pokemon_df.iterrows():
     pokedex_id = record['#']
     if "Mega" in name:
         continue
+    generation = int(record['Generation'])
+    if generation > 5:
+        continue
     type1 = record['Type 1']
     type2 = record['Type 2']
     hp = record['HP']
@@ -127,7 +130,6 @@ for index, record in pokemon_df.iterrows():
     spAtk = record['Sp. Atk']
     spDef = record['Sp. Def']
     speed = record['Speed']
-    generation = record['Generation']
 
     if type2 == '':
         type2 = None
