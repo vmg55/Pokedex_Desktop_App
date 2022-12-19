@@ -4,18 +4,11 @@ import moves
 
 class Pokemon:
 
+    # All pokemon will be level 50
     LEVEL = 50
 
-    def calculate_in_game_hp(self, base_stat):
-        in_game_hp = int(((2 * base_stat) * self.LEVEL) / 100 + self.LEVEL + 10)
-        return in_game_hp
-
-    def calculate_in_game_stat(self, base_stat):
-        in_game_stat = int(((2 * base_stat) * self.LEVEL) / 100 + 5)
-        return in_game_stat
-
     # Pokemon Constuctor
-    def __init__(self, name='', pokedex_id = 0 ,  type1=None, type2=None, base_hp=0, base_attack=0, base_defense=0,
+    def __init__(self, name='', pokedex_id=0 ,  type1=None, type2=None, base_hp=0, base_attack=0, base_defense=0,
                  base_sp_attack=0, base_sp_defense=0, base_speed=0, move_set=None, gen=0, sprite=None):
         # Pokemon Meta Data
         self.name = name
@@ -25,14 +18,44 @@ class Pokemon:
         self.gen = gen
         self.sprite = sprite
         # In Game Stats
-        self.hp = self.calculate_in_game_hp(base_hp)
-        self.attack = self.calculate_in_game_stat(base_attack)
-        self.defense = self.calculate_in_game_stat(base_defense)
-        self.sp_attack = self.calculate_in_game_stat(base_sp_attack)
-        self.sp_defense = self.calculate_in_game_stat(base_sp_defense)
-        self.speed = self.calculate_in_game_stat(base_speed)
+        self.hp = base_hp
+        self.attack = base_attack
+        self.defense = base_defense
+        self.sp_attack = base_sp_attack
+        self.sp_defense = base_sp_defense
+        self.speed = base_speed
         # Pokemon Moves
         self.move_set = move_set
+
+    def calc_type_effectiveness(self):
+        # dictionary type disadvantages against the pokemon; key = type, val = int
+        # Goes through the resistances and weaknesses of the pokemon's type(s)
+        type_effectiveness = {}
+        weaknesses = type_chart[self.type1]['Weak Against'] + type_chart[self.type2]['Weak Against']
+        resistances = type_chart[self.type1]['Resists'] + type_chart[self.type2]['Resists']
+
+        # A weakness gets a multiplier of 2
+        for t in weaknesses:
+            if t in type_effectiveness:
+                type_effectiveness[t] *= 2
+            else:
+                type_effectiveness[t] = 2
+        # A resistance gets cut in half
+        for t in resistances:
+            if t in type_effectiveness:
+                type_effectiveness[t] *= 0.5
+            else:
+                type_effectiveness[t] = 0.5
+
+        return type_effectiveness
+
+    def calculate_in_game_hp(self, base_stat):
+        in_game_hp = int(((2 * base_stat) * self.LEVEL) / 100 + self.LEVEL + 10)
+        return in_game_hp
+
+    def calculate_in_game_stat(self, base_stat):
+        in_game_stat = int(((2 * base_stat) * self.LEVEL) / 100 + 5)
+        return in_game_stat
 
     def input_move(self):
         name = input('Move Name: ')
@@ -155,48 +178,83 @@ class Pokemon:
         else:
             print(f"{self.name}'s attack missed!")
 
-
+# Pokemon type weaknesses, resistances, and immunities
 type_chart = {
     'Fire': {'Weak Against': ['Water', 'Ground', 'Rock'],
-             'Strong Against': ['Grass', 'Ice', 'Bug', 'Steel']},
+             'Strong Against': ['Grass', 'Ice', 'Bug', 'Steel'],
+             'Resists': ['Bug', 'Steel', 'Fire', 'Ice', 'Grass'],
+             'Immune': []},
     'Water': {'Weak Against': ['Electric', 'Grass'],
-              'Strong Against': ['Fire', 'Ground', 'Rock']},
+              'Strong Against': ['Fire', 'Ground', 'Rock'],
+              'Resists': ['Steel', 'Fire', 'Ice', 'Water'],
+              'Immune': []},
     'Grass': {'Weak Against': ['Fire', 'Ice', 'Flying', 'Poison', 'Bug'],
-              'Strong Against': ['Water', 'Ground', 'Rock']},
+              'Strong Against': ['Water', 'Ground', 'Rock'],
+              'Resists': ['Ground', 'Water', 'Grass', 'Electric'],
+              'Immune': []},
     'Rock': {'Weak Against': ['Water', 'Steel', 'Fighting', 'Ground', 'Grass'],
-             'Strong Against': ['Fire', 'Flying', 'Ice', 'Steel']},
+             'Strong Against': ['Fire', 'Flying', 'Ice', 'Steel'],
+             'Resists': ['Normal', 'Flying', 'Poison', 'Fire'],
+             'Immune': []},
     'Ground': {'Weak Against': ['Water', 'Grass', 'Ice', ],
-               'Strong Against': ['Fire', 'Electric', 'Poison', 'Rock', 'Steel']},
+               'Strong Against': ['Fire', 'Electric', 'Poison', 'Rock', 'Steel'],
+               'Resists': ['Poison', 'Rock'],
+               'Immune': ['Electric']},
     'Electric': {'Weak Against': ['Ground'],
-                 'Strong Against': ['Flying', 'Water']},
+                 'Strong Against': ['Flying', 'Water'],
+                 'Resists': ['Flying', 'Steel', 'Electric'],
+                 'Immune': []},
     'Ice': {'Weak Against': ['Fire', 'Steel', 'Rock', 'Fighting'],
-            'Strong Against': ['Grass', 'Ground', 'Flying', 'Dragon']},
+            'Strong Against': ['Grass', 'Ground', 'Flying', 'Dragon'],
+            'Resists': ['Ice'],
+            'Immune': []},
     'Dragon': {'Weak Against': ['Ice', 'Fairy', 'Dragon'],
-               'Strong Against': ['Dragon']},
+               'Strong Against': ['Dragon'],
+               'Resists': ['Fire', 'Grass', 'Electric', 'Water'],
+               'Immune': []},
     'Dark': {'Weak Against': ['Bug', 'Fighting', 'Fairy'],
-             'Strong Against': ['Psychic', 'Ghost']},
+             'Strong Against': ['Psychic', 'Ghost'],
+             'Resists': ['Ghost', 'Dark'],
+             'Immune': ['Psychic']},
     'Psychic': {'Weak Against': ['Fighting', 'Poison'],
-                'Strong Against': ['Bug', 'Ghost', 'Dark']},
+                'Strong Against': ['Bug', 'Ghost', 'Dark'],
+                'Resists': ['Fighting', 'Psychic'],
+                'Immune': []},
     'Ghost': {'Weak Against': ['Ghost', 'Dark'],
-              'Strong Against': ['Ghost', 'Psychic']},
+              'Strong Against': ['Ghost', 'Psychic'],
+              'Resists': ['Poison', 'Bug'],
+              'Immune': ['Normal', 'Fighting']},
     'Bug': {'Weak Against': ['Fire', 'Flying', 'Rock'],
-            'Strong Against': ['Psychic', 'Dark', 'Grass']},
+            'Strong Against': ['Psychic', 'Dark', 'Grass'],
+            'Resists': ['Fighting', 'Ground', 'Grass'],
+            'Immune': []},
     'Flying': {'Weak Against': ['Ice', 'Electric', 'Rock'],
-               'Strong Against': ['Grass', 'Fighting', 'Bug']},
+               'Strong Against': ['Grass', 'Fighting', 'Bug'],
+               'Resists': ['Fighting', 'Bug', 'Grass'],
+               'Immune': ['Ground']},
     'Steel': {'Weak Against': ['Fire', 'Ground', 'Fighting'],
-              'Strong Against': ['Rock', 'Fairy', 'Ice']},
+              'Strong Against': ['Rock', 'Fairy', 'Ice'],
+              'Resists': ['Normal', 'Flying', 'Bug', 'Psychic', 'Rock', 'Steel', 'Grass', 'Ice', 'Dragon', 'Fairy'],
+              'Immune': ['Poison']},
     'Fighting': {'Weak Against': ['Flying', 'Psychic', 'Fairy'],
-                 'Strong Against': ['Normal', 'Ice', 'Rock', 'Steel', 'Dark']},
+                 'Strong Against': ['Normal', 'Ice', 'Rock', 'Steel', 'Dark'],
+                 'Resists': ['Rock', 'Dark', 'Bug'],
+                 'Immune': []},
     'Poison': {'Weak Against': ['Psychic', 'Ground'],
-               'Strong Against': ['Grass', 'Fairy']},
+               'Strong Against': ['Grass', 'Fairy'],
+               'Resists': ['Fighting', 'Poison', 'Grass', 'Fairy', 'Bug'],
+               'Immune': []},
     'Fairy': {'Weak Against': ['Posion', 'Steel'],
-              'Strong Against': ['Fighting', 'Dragon', 'Dark']},
+              'Strong Against': ['Fighting', 'Dragon', 'Dark'],
+              'Resists': ['Fighting', 'Bug', 'Dark'],
+              'Immune': ['Dragon']},
     'Normal': {'Weak Against': ['Fighting'],
-               'Strong Against': []},
-
+               'Strong Against': [],
+               'Resists': [],
+               'Immune': ['Ghost']}
 }
 
-
+# Pokemon battle mechanic for later updates of the GUI (1 vs 1)
 def one_on_one_battle(pokemon1, pokemon2):
     counter = 1
     while pokemon1.hp > 0 and pokemon2.hp > 0:
@@ -235,6 +293,7 @@ def display_team(team):
         print(i.name)
 
 
+# Pokemon battle mechanic for later updates of the GUI (team vs team)
 def team_battle(team1=None, team2=None):
     # one team of pokemon will battle against another team of pokemon
     # need to battle pokemon one on one
