@@ -1,5 +1,6 @@
 import random
 import moves
+from math import isnan
 
 
 class Pokemon:
@@ -31,8 +32,12 @@ class Pokemon:
         # dictionary type disadvantages against the pokemon; key = type, val = int
         # Goes through the resistances and weaknesses of the pokemon's type(s)
         type_effectiveness = {}
-        weaknesses = type_chart[self.type1]['Weak Against'] + type_chart[self.type2]['Weak Against']
-        resistances = type_chart[self.type1]['Resists'] + type_chart[self.type2]['Resists']
+        if type(self.type2) is float:
+            weaknesses = type_chart[self.type1]['Weak Against']
+            resistances = type_chart[self.type1]['Resists']
+        else:
+            weaknesses = type_chart[self.type1]['Weak Against'] + type_chart[self.type2]['Weak Against']
+            resistances = type_chart[self.type1]['Resists'] + type_chart[self.type2]['Resists']
 
         # A weakness gets a multiplier of 2
         for t in weaknesses:
@@ -143,10 +148,6 @@ class Pokemon:
         if move_type == TYPE1 or move_type == TYPE2:
             stab = 1.5
 
-        # Check if Pokemon is burned
-        if self.status == 'Burn' and category == 'Physical':
-            burn = 0.5
-
         # Determine what Attack and Defense Stats will be used
         if category == 'Physical':
             a = self.attack
@@ -177,6 +178,7 @@ class Pokemon:
                 opposing_pokemon.hp = 0
         else:
             print(f"{self.name}'s attack missed!")
+
 
 # Pokemon type weaknesses, resistances, and immunities
 type_chart = {
@@ -253,6 +255,7 @@ type_chart = {
                'Resists': [],
                'Immune': ['Ghost']}
 }
+
 
 # Pokemon battle mechanic for later updates of the GUI (1 vs 1)
 def one_on_one_battle(pokemon1, pokemon2):
