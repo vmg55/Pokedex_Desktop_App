@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import ttk
 import pokemon
 import pandas as pd
+from math import isnan
 
 
 class Pokedex:
@@ -34,21 +35,26 @@ class Pokedex:
         self.combobox.set('Bulbasaur')
 
         # Frame for pokemon image and typing
-        self.picture_frame = ttk.Frame(master)
+        self.picture_frame = ttk.Frame(master, height=100, width=200)
         self.picture_frame.pack(fill=BOTH)
         self.pokemon_type1 = 'Grass'
         self.pokemon_type2 = 'Poison'
         self.pokemon_sprite = PhotoImage(file='pokemon_sprites/1.png')
         self.sprite_label = ttk.Label(self.picture_frame, image=self.pokemon_sprite)
-        self.type1_label = ttk.Label(self.picture_frame, text=self.pokemon_type1)
+        self.type1_label = ttk.Label(self.picture_frame,  text=self.pokemon_type1)
         self.type2_label = ttk.Label(self.picture_frame, text=self.pokemon_type2)
         # Buttons for pokemon type effectiveness
-        ttk.Button(self.picture_frame, text='Resists', command=self.resistances).grid(row=0, column=2)
-        ttk.Button(self.picture_frame, text='Weaknesses', command=self.weaknesses).grid(row=0, column=3)
+        ttk.Button(self.picture_frame, text='Resists', command=self.resistances).place(x=110, y=0)
+        ttk.Button(self.picture_frame, text='Weaknesses', command=self.weaknesses).place(x=195, y=0)
+        # Type effectiveness labels
+        self.quarter_resistant = ttk.Label(self.picture_frame, text=f'1/4: ')
+        self.quarter_resistant.place(x=110, y=30)
+        self.half_resistant = ttk.Label(self.picture_frame, text=f'1/2: ')
+        self.half_resistant.place(x=110, y=65)
         # Layout of image and typing
-        self.type1_label.grid(row=0, column=0)
-        self.type2_label.grid(row=0, column=1)
-        self.sprite_label.grid(row=1, column=0, columnspan=2)
+        self.type1_label.place(x=5, y=0)
+        self.type2_label.place(x=60, y=0)
+        self.sprite_label.place(x=0, y=10)
 
         # Frame for Pokemon stats
         self.stats_frame = ttk.Frame(master)
@@ -99,8 +105,15 @@ class Pokedex:
         pokedex_id = pokedex_dict[pokemon_selected].pokedex_id
         # Change sprite that is displayed along with types
         poke_sprite = PhotoImage(file=f'pokemon_sprites/{pokedex_id}.png')
-        self.type1_label.config(text=pokedex_dict[pokemon_selected].type1)
-        self.type2_label.config(text=pokedex_dict[pokemon_selected].type2)
+        if type(pokedex_dict[pokemon_selected].type2) is float:
+            self.type1_label.place(x=28, y=0)
+            self.type1_label.config(text=pokedex_dict[pokemon_selected].type1)
+            self.type2_label.place_forget()
+        else:
+            self.type1_label.place(x=5, y=0)
+            self.type2_label.place(x=60, y=0)
+            self.type1_label.config(text=pokedex_dict[pokemon_selected].type1)
+            self.type2_label.config(text=pokedex_dict[pokemon_selected].type2)
         self.sprite_label.img = poke_sprite
         self.sprite_label.config(image=self.sprite_label.img)
         # Change pokemon stats to match selected pokemon
@@ -118,10 +131,48 @@ class Pokedex:
         self.speed_bar.config(mode='determinate', maximum=300, value=pokedex_dict[pokemon_selected].speed)
 
     def resistances(self):
-        pass
+        pokemon_selected = self.combobox.get().lower()
+        type_effectiveness = pokedex_dict[pokemon_selected].calc_type_effectiveness()
+        quarter = [k for k, v in type_effectiveness.items() if v < 0.5]
+        half = [k for k, v in type_effectiveness.items() if v == 0.5]
+        quarter_str = ''
+        half_str = ''
+        for i, t in enumerate(quarter):
+            quarter_str += t
+            quarter_str += '   '
+            if (i+1) % 3 == 0:
+                quarter_str += '\n        '
+        for i, t in enumerate(half):
+            half_str += t
+            half_str += '   '
+            if (i +1) % 3 == 0:
+                half_str += '\n        '
+        self.quarter_resistant.config(text=f'1/4: {quarter_str}')
+        self.quarter_resistant.place(x=110, y=30)
+        self.half_resistant.config(text=f'1/2: {half_str}')
+        self.half_resistant.place(x=110, y=65)
 
     def weaknesses(self):
-        pass
+        pokemon_selected = self.combobox.get().lower()
+        type_effectiveness = pokedex_dict[pokemon_selected].calc_type_effectiveness()
+        times2 = [k for k, v in type_effectiveness.items() if v == 2]
+        times4 = [k for k, v in type_effectiveness.items() if v > 2]
+        times_two_str = ''
+        times_four_str = ''
+        for i, t in enumerate(times2):
+            times_two_str += t
+            times_two_str += '     '
+            if (i + 1) % 3 == 0:
+                times_two_str += '\n      '
+        for i, t in enumerate(times4):
+            times_four_str += t
+            times_four_str += '     '
+            if (i + 1) % 3 == 0:
+                times_four_str += '\n        '
+        self.quarter_resistant.config(text=f'2x: {times_two_str}')
+        self.quarter_resistant.place(x=110, y=30)
+        self.half_resistant.config(text=f'4x: {times_four_str}')
+        self.half_resistant.place(x=110, y=65)
 
 
 pokemon_df = pd.read_csv('Pokemon_data.csv')
@@ -145,11 +196,8 @@ for index, record in pokemon_df.iterrows():
     spDef = record['Sp. Def']
     speed = record['Speed']
 
-    if type2 == '':
-        type2 = None
-
     pokedex_dict[name.lower()] = pokemon.Pokemon(name, pokedex_id, type1, type2, hp, attack, defense, spAtk,
-                                         spDef, speed, gen=generation)
+                                                 spDef, speed, gen=generation)
 
 # Sort pokemon into alphabetical order
 sorted_tuples = sorted(pokedex_dict.items(), key=lambda item: item[1].name)
